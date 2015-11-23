@@ -1,7 +1,7 @@
 {
   "name": "elliptical-location",
   "description": "Express style, history-enabled routing for the browser",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "S. Francis",
   "license": "MIT",
   "repository": {
@@ -10,7 +10,8 @@
   },
   "dependencies":{
     "elliptical-class": "git+https://github.com/tachyon1337/elliptical-class.git",
-    "elliptical-utils": "git+https://github.com/tachyon1337/elliptical-utils.git"
+    "elliptical-utils": "git+https://github.com/tachyon1337/elliptical-utils.git",
+    "elliptical-event": "git+https://github.com/tachyon1337/elliptical-event.git"
   },
   "devDependencies": {
     "gulp": "^3.8.7",
