@@ -233,12 +233,22 @@
 
         stateObject:null,
 
+        /**
+         *
+         * @returns {string}
+         * @public
+         */
         get hashTag(){
             var hashTag=window.elliptical.$hashTag;
             if(hashTag===undefined)return false;
             return hashTag;
         },
 
+        /**
+         *
+         * @returns {string}
+         * @public
+         */
         get virtualRoot(){
             var virtualRoot= window.elliptical.$virtualRoot;
             if(virtualRoot===undefined)return DEFAULT_ROOT;
@@ -247,8 +257,9 @@
 
         /**
          * if hashTag bit is set, adds a hashtag to the route, if not already present
-         * @param route {String}
-         * @returns {String}
+         * @param {string} route
+         * @returns {string}
+         * @public
          */
         hashify:function(route){
             var virtualRoot=this.virtualRoot;
@@ -268,8 +279,9 @@
 
         /**
          * if hashTag bit is set, removes the leading hashtag from the route
-         * @param route {String}
-         * @returns {String}
+         * @param {string} route
+         * @returns {string}
+         * @public
          */
         deHashify:function(route){
             var virtualRoot=this.virtualRoot;
@@ -283,15 +295,21 @@
             return route;
         },
 
+        /**
+         *
+         * @param {string} route
+         * @returns {string}
+         * @public
+         */
         hashRoot:function(route){
-            if(this.hashTag && route.slice(-1)===HASH_TAG)route+=DEFAULT_ROOT;
-
+            if(this.hashTag && route.slice(-1)===HASH_TAG) route+=DEFAULT_ROOT;
             return route;
         },
 
         /**
          * replaces location.path, factoring out virtual root and hashtag
          * @returns {string}
+         * @public
          */
         get path(){
             var hashTag=this.hashTag;
@@ -311,6 +329,11 @@
             return path;
         },
 
+        /**
+         *
+         * @returns {string}
+         * @public
+         */
         get href(){
             var origin=location.origin;
             var path=this.path;
@@ -318,15 +341,30 @@
             return origin + path + search;
         },
 
+        /**
+         *
+         * @param {string} val
+         * @public
+         */
         set href(val){
             this.redirect(val);
         },
 
+        /**
+         *
+         * @returns {object}
+         * @public
+         */
         get query(){
             var u=this.href;
             return url.query(u);
         },
 
+        /**
+         *
+         * @returns {string}
+         * @public
+         */
         get search(){
             if(this.hashTag){
                 var url_=location.hash;
@@ -341,6 +379,11 @@
             }
         },
 
+        /**
+         *
+         * @param {string} val
+         * @public
+         */
         set search(val){
             if(this.hashTag){
                 var hash=location.hash;
@@ -356,10 +399,23 @@
             }
         },
 
+        /**
+         *
+         * @param {string} u
+         * @returns {object}
+         * @public
+         */
         getQuery:function(u){
             return url.query(u);
         },
 
+        /**
+         *
+         * @param {string} key
+         * @param {string} val
+         * @returns {string}
+         * @public
+         */
         setQuery:function(key,val){
             var search = this.search;
             if (search !== '') {
@@ -375,11 +431,22 @@
             return search;
         },
 
+        /**
+         *
+         * @param {string} route
+         * @returns {string}
+         * @public
+         */
         toPath:function(route){
             var rte=route.split('?');
             return rte[0];
         },
 
+        /**
+         *
+         * @returns {string}
+         * @public
+         */
         get referrer() {
             if(this.stateObject) return this.stateObject.url;
             else{
@@ -389,18 +456,19 @@
 
         /**
          * triggers a registered route
-         * @param route {String}
+         * @param {string} route
          */
         redirect:function(route){
-            //note: application.js will overwrite this if History enabled
+            //default implementation using window.location
             location.href=route;
         },
 
         /**
          * reloads the current route
+         * @public
          */
         reload:function(){
-            //note: application.js will overwrite this if History enabled
+            //default implementation using window.location
             location.reload();
         },
 
@@ -423,16 +491,16 @@
 (function (root, factory) {
     if (typeof module !== 'undefined' && module.exports) {
         //commonjs
-        module.exports = factory(require('elliptical-utils'),require('elliptical-class'),require('./location'),require('./url'));
+        module.exports = factory(require('elliptical-utils'),require('elliptical-class'),require('elliptical-event'),require('./location'),require('./url'));
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['elliptical-utils','elliptical-class','./location','./url'], factory);
+        define(['elliptical-utils','elliptical-class','elliptical-event','./location','./url'], factory);
     } else {
         // Browser globals (root is window)
-        root.Elliptical.Router=factory(elliptical.utils,elliptical.Class,elliptical.Location,elliptical.url);
-        root.returnExports = root.Elliptical.Router;
+        root.elliptical.Router=factory(elliptical.utils,elliptical.Class,elliptical.Event,elliptical.Location,elliptical.url);
+        root.returnExports = root.elliptical.Router;
     }
-}(this, function (utils,Class,Location,url) {
+}(this, function (utils,Class,Event,Location,url) {
 
     var string=utils.string;
     var isTouch=('ontouchend' in document);
@@ -480,7 +548,8 @@
             var route=data.route;
             var params={};
             var method=data.method;
-            if(method===undefined)method='get';
+            if(data.body) params=data.body;
+            if(method===undefined) method='get';
             Router.location(route,method,params);
         }
 
@@ -503,9 +572,7 @@
                 var title = '';
                 stateObject.url = Location.href;
                 stateObject.route = Location.hashify(stateObject.route);
-                if(string.lastChar(stateObject.route) === '#'){
-                    stateObject.route+='/';
-                }
+                if(string.lastChar(stateObject.route) === '#')stateObject.route+='/';
                 Location.stateObject=stateObject;
                 window.history.pushState(stateObject, title, stateObject.route);
             }
@@ -532,11 +599,8 @@
         },
 
         dispatchEvent:function(route,method,params){
-            //var _route=Location.toPath(route);
             if(Location.hashTag){
-                if(route.indexOf('/#')===0){
-                    route=route.substr(2,route.length-2);
-                }
+                if(route.indexOf('/#')===0)route=route.substr(2,route.length-2);
             }
             var data={
                 route:route,
@@ -562,7 +626,7 @@
             this.pushHistory = true;
 
             setTimeout(function(){
-                Location.redirect(location.href);//fire the route of the current url
+                Location.redirect(route);//fire the route of the current url
             },300);
 
             $(window).on('popstate', function (event) {
@@ -586,6 +650,7 @@
     ///Route
     var Route=Class.extend({
         dispatchEvent:'OnRouteDispatch',
+        locationChange:'LocationChange',
 
         add: function (method, route, callbacks) {
             if (this.verify(route, method)) {
@@ -603,15 +668,11 @@
             Router.routes.forEach(function(obj,i){
                 var route_=obj.route;
                 var method_=obj.method;
-                if(route===route_ && method===method_){
-                    index=i;
-                }
+                if(route===route_ && method===method_)index=i;
             });
             if (index > -1) {
                 Router.routes.splice(index, 1);
-                if (Router.debug) {
-                    console.log('route: ' + route + ' has been removed');
-                }
+                if (Router.debug) console.log('route: ' + route + ' has been removed');
             }
         },
 
@@ -620,9 +681,7 @@
             Router.routes.every(function(obj){
                 var route_=obj.route;
                 var method_=obj.method;
-                if(route===route_ && method===method_){
-                    bool= false;
-                }
+                if(route===route_ && method===method_)bool= false;
             });
 
             return bool;
@@ -649,9 +708,7 @@
         location:function(route, method,params){
 
             route=Location.deHashify(route);
-            if(route===''){
-                route='/';
-            }
+            if(route==='')route='/';
             History.push();
 
             if (!this.dispatch(route,method,params)) {
@@ -672,6 +729,7 @@
         dispatch:function(route, method, params){
             var self=this;
             var dispatchEvent=this.dispatchEvent;
+            var locationChange=this.locationChange;
             var success = false;
             var routes=Router.routes;
             //retain original route for case sensitivity of querystrings
@@ -689,9 +747,7 @@
                 var data = rule.parse(routePath);
 
                 if ((data != null) && (obj.method.toLowerCase() === method.toLowerCase()) &&(!success)) {
-                    if(method.toLowerCase()!='get'){
-                        body=url.body(data);
-                    }
+                    if(method.toLowerCase()!='get') body=params;
                     /* query component */
                     query=url.query(origRoute);
 
@@ -712,7 +768,7 @@
                     };
 
                     Event.emit(dispatchEvent, data_);
-                    $(window).trigger('LocationChange', routePath);
+                    $(window).trigger(locationChange, routePath);
                     success = true;
                 }
 
@@ -774,55 +830,36 @@
 
         parseMethod:function(method,route,callbacks){
             if(!_contains(this.validMethods,method))return false;
-
             var handlers = [];
-            if ('string' != typeof route) {
-                route = '/';
-            }
-            if (string.lastChar(route) === '/' && route.length > 1) {
-                route = string.trimLastChar(route);
-            }
+            if ('string' != typeof route) route = '/';
+            if (string.lastChar(route) === '/' && route.length > 1) route = string.trimLastChar(route);
             var args = Array.prototype.slice.call(arguments, 0);
             for (var i = 0; i < args.length; i++) {
-                if (typeof args[i] === 'function') {
-                    handlers.push(args[i]);
-                }
+                if (typeof args[i] === 'function') handlers.push(args[i]);
             }
-            if (args.length < 1) {
-                console.log('error adding route: "' + route + '".  A route must have at least one handler function.')
-            } else {
-                Route.add(method, route, handlers);
-            }
+            if (args.length < 1) console.log('error adding route: "' + route + '".  A route must have at least one handler function.');
+            else Route.add(method, route, handlers);
 
         },
 
         remove:function(route, method){
-            if (!this.enabled) {
-                return false;
-            }
+            if (!this.enabled) return false;
             Route.remove(route, method);
         },
 
         removeAll:function(){
             var self=this;
-            if (!this.enabled) {
-                return false;
-            }
+            if (!this.enabled) return false;
             this.routes.forEach(function(obj){
                 self.remove(obj.route,obj.method);
             });
         },
 
         location: function(route, method,params, delay){
-            if (!this.enabled) {
-                return false;
-            }
-            if(typeof params==='undefined'){
-                params={};
-            }
+            if (!this.enabled) return false;
+            if(typeof params==='undefined') params={};
             route=url.sanitize(route);
             route=Location.hashRoot(route);
-
             var stateObj = { route: route, params: params, method: method,url:Location.href };
             History.stateObject = stateObj;
             History.pushHistory = true;
@@ -840,9 +877,7 @@
 
 
         start:function(){
-            if (this.enabled) {    /* if already started, exit */
-                return false;
-            }
+            if (this.enabled) return false;   /* if already started, exit */
             this.enabled = true;
             History.start();
             Listener.on();
@@ -870,19 +905,12 @@
         history:function(pages, delay){
             if (typeof delay != 'undefined') {
                 setTimeout(function () {
-                    if (typeof pages === 'undefined') {
-                        window.history.back();
-                    } else {
-                        window.history.go(pages);
-                    }
-
+                    if (typeof pages === 'undefined') window.history.back();
+                    else window.history.go(pages);
                 }, delay);
             } else {
-                if (typeof pages === 'undefined') {
-                    window.history.back();
-                } else {
-                    window.history.go(pages);
-                }
+                if (typeof pages === 'undefined' || typeof pages==='object') window.history.back();
+                else window.history.go(pages);
             }
         },
 
@@ -895,41 +923,28 @@
 
         /**
          * set Route event provider and event name
-         * @param $event {Object}
-         * @param eventName {String}
+         * @param {object} $event
+         * @param {string} eventName
          */
         $provider:function($event,eventName){
-            if(typeof $event==='string'){
-                Route.dispatchEvent=eventName;
-            }else if(typeof $event !== 'undefined'){
+            if(typeof $event==='string') Route.dispatchEvent=eventName;
+            else if(typeof $event !== 'undefined'){
                 Event=$event;
-                if(typeof eventName==='string'){
-                    Route.dispatchEvent=eventName;
-                }
+                if(typeof eventName==='string') Route.dispatchEvent=eventName;
             }
         },
 
         /* configure Listener/Event settings */
         configure:function(opts){
-            if(opts.request){
-                Listener.events.request=opts.request;
-            }
-            if(opts.orientation){
-                Listener.events.orientation=opts.orientation;
-            }
-            if(opts.click){
-                Listener.events.click=opts.click;
-            }
-            if(opts.backButtonSelector){
-                Listener.backButtonSelector=opts.backButtonSelector;
-            }
-            if(opts.dispatchEvent){
-                Route.dispatchEvent=opts.dispatchEvent;
-            }
+            if(opts.request) Listener.events.request=opts.request;
+            if(opts.orientation) Listener.events.orientation=opts.orientation;
+            if(opts.click) Listener.events.click=opts.click;
+            if(opts.backButtonSelector) Listener.backButtonSelector=opts.backButtonSelector;
+            if(opts.dispatchEvent) Route.dispatchEvent=opts.dispatchEvent;
+
             /* reset Listener */
             Listener.reset();
         }
-
 
     },{});
 
